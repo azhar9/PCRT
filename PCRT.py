@@ -44,16 +44,22 @@ if platform.system() == "Windows":
 		resetColor()	
 
 def str2hex(s):
-	return s.encode('hex').upper()
+	if isinstance(s,bytes):
+		return s.hex().upper()
+	elif isinstance(s,str):
+		return s.encode('hex').upper()
+	elif isinstance(s,int):
+		return hex(s).upper()
+	raise Exception('Error in str2hex!',type(s),s)
 
 def int2hex(i):
-	return '0x'+hex(i)[2:].upper()
+	return hex(i)[2:].upper()
 
 def str2num(s,n=0):
 	if n==4:
 		return struct.unpack('!I',s)[0]
 	else:
-		return eval('0x'+str2hex(s))
+		return str2hex(s)
 
 def WriteFile(filename):
 	if os.path.isfile(filename)==True:
@@ -397,7 +403,7 @@ class PNG(object):
 
 	def FindAncillary(self,data):
 		ancillary=['cHRM','gAMA','sBIT','PLTE','bKGD','sTER','hIST','iCCP','pHYs','sPLT','sRGB','dSIG','eXIf','iTXt','tEXt','zTXt','tIME','tRNS','oFFs','sCAL','fRAc','gIFg','gIFt','gIFx']
-		attach_txt=['eXIf','iTXt','tEXt','zTXt']
+		attach_txt=[b'eXIf',b'iTXt',b'tEXt',b'zTXt']
 		content={}
 		for text in attach_txt:
 			pos=0
@@ -434,21 +440,7 @@ class PNG(object):
 		print('[Finished] PNG check complete')
 
 		'''check complete'''
-
-		if self.choices != '':
-			choice=self.choices
-		else:
-			msg=Termcolor('Notice','Show the repaired image? (y or n) [default:n] ')
-			choice=input(msg)
-		if choice == 'y':
-			try:
-				from PIL import Image
-				self.file.close()
-				img=Image.open(self.out_file)
-				img.show()
-			except ImportError as e:
-				print(Termcolor('Error',e))
-				print("Try 'pip install PIL' to use it")
+		print('completed!')
 		return 0
 
 	def Checkcrc(self,chunk_type,chunk_data, checksum):
@@ -461,7 +453,7 @@ class PNG(object):
 			return None
 
 	def CheckFormat(self,data):
-		png_feature=['PNG','IHDR','IDAT','IEND']
+		png_feature=[b'PNG',b'IHDR',b'IDAT',b'IEND']
 		status = [True for p in png_feature if p in data]
 		if status == []:
 			return -1
@@ -470,7 +462,7 @@ class PNG(object):
 	def CheckHeader(self,data):
 		# Header:89 50 4E 47 0D 0A 1A 0A   %PNG....
 		Header=data[:8]
-		if str2hex(Header)!='89504E470D0A1A0A':
+		if Header!=bytes.fromhex('89504E470D0A1A0A'):
 			print(Termcolor('Detected','Wrong PNG header!'))
 			print('File header: %s\nCorrect header: 89504E470D0A1A0A'%(str2hex(Header)))
 			if self.choices != '':
@@ -489,10 +481,10 @@ class PNG(object):
 		return 0
 
 	def FindIHDR(self,data):
-		pos=data.find('IHDR')
+		pos=data.find(b'IHDR')
 		if pos == -1:
 			return -1,-1
-		idat_begin=data.find('IDAT')
+		idat_begin=data.find(b'IDAT')
 		if idat_begin != -1:
 			IHDR=data[pos-4:idat_begin-4]
 		else:
@@ -520,7 +512,7 @@ class PNG(object):
 				choice=self.choices
 			else:
 				msg = Termcolor('Notice','Try fixing it? (y or n) [default:y] ')
-				choice = input(msg)
+				choice = 'y'
 			if choice == 'y' or choice=='':
 				if width > height:
 					# fix height
@@ -549,7 +541,9 @@ class PNG(object):
 	def CheckIDAT(self,data):
 		# IDAT:length(4 bytes)+chunk_type='IDAT'(4 bytes)+chunk_data(length bytes)+crc(4 bytes)
 		IDAT_table = []
-		idat_begin = data.find('49444154'.decode('hex'))-4
+		#'49444154'.decode('hex')
+		#bytes.fromhex('49444154').decode('utf-8')
+		idat_begin = data.find((b'49444154'.hex()).encode('utf-8'))-4
 		if idat_begin == -1:
 			print(Termcolor('Detected','Lost all IDAT chunk!'))
 			return -1,''
@@ -563,11 +557,11 @@ class PNG(object):
 				IDAT_table.append(data[i:-12])
 		elif self.i_mode == 1:
 			# slow but safe
-			pos_IEND=data.find('IEND')
+			pos_IEND=data.find(b'IEND')
 			if pos_IEND != -1:
-				pos_list = [g.start() for g in re.finditer('IDAT',data) if g.start() < pos_IEND]
+				pos_list = [g.start() for g in re.finditer(b'IDAT',data) if g.start() < pos_IEND]
 			else:
-				pos_list = [g.start() for g in re.finditer('IDAT',data)]
+				pos_list = [g.start() for g in re.finditer(b'IDAT',data)]
 			for i in range(len(pos_list)):
 				# split into IDAT
 				if i+1 == len(pos_list):
@@ -637,11 +631,11 @@ class PNG(object):
 		pos=-1
 		pos_list=[]
 		while True:
-			pos=chunk_data.find('\x0A',pos+1)
+			pos=chunk_data.find(b'\x0A',pos+1)
 			if pos == -1:
 				break
 			pos_list.append(pos)
-		fix='\x0D'
+		fix=b'\x0D'
 		tmp=chunk_data
 		for pos_all in itertools.combinations(pos_list,count): 
 			i=0
@@ -658,8 +652,8 @@ class PNG(object):
 
 	def CheckIEND(self,data):
 		# IEND:length=0(4 bytes)+chunk_type='IEND'(4 bytes)+crc=AE426082(4 bytes)
-		standard_IEND='\x00\x00\x00\x00IEND\xae\x42\x60\x82'
-		pos=data.find('IEND')
+		standard_IEND=b'\x00\x00\x00\x00IEND\xae\x42\x60\x82'
+		pos=data.find(b'IEND')
 		if pos == -1:
 			print(Termcolor('Detected','Lost IEND chunk! Try auto fixing...'))
 			IEND=standard_IEND
@@ -731,7 +725,7 @@ Version: %s
 	args.quiet = True
 	args.yes = True
 	args.verbose = True
-	args.message = True
+	args.message = False
 
 	in_file=inputFileName
 	out_file=outputFileName
@@ -792,4 +786,3 @@ Version: %s
 				my_png.CheckPNG()
 		else:
 			parser.print_help()
-
