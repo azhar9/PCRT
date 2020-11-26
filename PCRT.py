@@ -695,7 +695,7 @@ class PNG(object):
 		print('[Finished] IEND chunk check complete')
 		return 0
 
-if __name__=='__main__':
+def pcrt(inputFileName,outputFileName):
 	
 	msg="""
 	 ____   ____ ____ _____ 
@@ -727,11 +727,23 @@ Version: %s
 	parser.add_argument('-o', '--output', default='output.png', help='Output repaired file name [Default: output.png]')
 	args = parser.parse_args()
 
-	in_file=args.input
-	out_file=args.output
-	payload=args.payload
-	payload_name=args.name
-	z_file=args.decompress
+	#overriding few settings for my use case
+	args.quiet = True
+	args.yes = True
+	args.verbose = True
+	args.message = True
+
+	in_file=inputFileName
+	out_file=outputFileName
+	payload=None
+	payload_name=None
+	z_file=None
+
+	# in_file=args.input
+	# out_file=args.output
+	# payload=args.payload
+	# payload_name=args.name
+	# z_file=args.decompress
 
 	if args.quiet != True:
 		print(msg)
