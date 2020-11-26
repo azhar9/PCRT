@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 __author__="sherlly"
-__version__="1.1"
+__version__="1.2"
+__porter__="AzharSyed"
 
 import zlib
 import struct
