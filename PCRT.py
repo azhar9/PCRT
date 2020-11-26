@@ -670,7 +670,7 @@ class PNG(object):
 				print(Termcolor('Detected','Some data (length: %d) append in the end (%s)'%(len(data[pos+8:]),data[pos+8:pos+18])))
 				while True:
 					msg = Termcolor('Notice','Try extracting them in: <1>File <2>Terminal <3>Quit [default:3] ')
-					choice=input(msg)
+					choice='3'
 					if choice == '1':
 						filename = input('[File] Input the file name: ')
 						file=WriteFile(filename)
