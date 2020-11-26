@@ -433,8 +433,8 @@ class PNG(object):
 			print('[Finished] PNG check complete')
 			return -1
 
-		res,idat=self.CheckIDAT(data)
-		if res == -1:
+		res,idat,failed=self.CheckIDAT(data)
+		if res == -1 or failed:
 			print('[Finished] PNG check complete')
 			return -1
 		self.CheckIEND(data)
@@ -540,6 +540,7 @@ class PNG(object):
 		self.GetPicInfo(ihdr=chunk_ihdr)
 
 	def CheckIDAT(self,data):
+		failed = False
 		# IDAT:length(4 bytes)+chunk_type='IDAT'(4 bytes)+chunk_data(length bytes)+crc(4 bytes)
 		IDAT_table = []
 		#'49444154'.decode('hex')
@@ -599,6 +600,7 @@ class PNG(object):
 					chunk_data=self.FixDos2Unix(chunk_type,chunk_data,crc,count=abs(length-len(chunk_data)))
 					if chunk_data == None:
 						print(Termcolor('Failed','Fixing failed, auto discard this operation...'))
+						failed = True
 						chunk_data=IDAT[8:-4]
 					else:
 						IDAT=IDAT[:8]+chunk_data+IDAT[-4:]
@@ -626,7 +628,7 @@ class PNG(object):
 			IDAT_data_table.append(chunk_data)
 			offset+=len(chunk_data)+12
 		print('[Finished] IDAT chunk check complete (offset: %s)'%(int2hex(idat_begin)))
-		return 0,IDAT_data_table
+		return 0,IDAT_data_table,failed
 
 	def FixDos2Unix(self,chunk_type,chunk_data,crc,count):
 		pos=-1
@@ -784,6 +786,6 @@ Version: %s
 				way=args.way
 				my_png.AddPayload(payload_name,payload,way)
 			else:
-				my_png.CheckPNG()
+				return my_png.CheckPNG()
 		else:
 			parser.print_help()
