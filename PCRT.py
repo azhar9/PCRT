@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 __author__="sherlly"
 __version__="1.2"
-__porter__="AzharSyed"
+__porter__="azhar9"
 
 import zlib
 import struct
@@ -470,7 +470,7 @@ class PNG(object):
 				choice=self.choices
 			else:
 				msg = Termcolor('Notice','Auto fixing? (y or n) [default:y] ')
-				choice=input(msg)
+				choice='y'
 			if choice == 'y' or choice == '':
 				Header='89504E470D0A1A0A'.decode('hex')
 				print('[Finished] Now header:%s'%(str2hex(Header)))
@@ -592,7 +592,7 @@ class PNG(object):
 					choice=self.choices
 				else:				
 					msg = Termcolor('Notice','Try fixing it? (y or n) [default:y] ')
-					choice=input(msg)
+					choice='y'
 				if choice == 'y' or choice == '':
 					print(Termcolor('Warning','Only fix because of DOS->Unix conversion'))
 					# error reason:DOS->Unix conversion
@@ -613,7 +613,7 @@ class PNG(object):
 						choice=self.choices
 					else:		
 						msg = Termcolor('Notice','Try fixing it? (y or n) [default:y] ')
-						choice = input(msg)
+						choice = 'y'
 					if choice == 'y' or choice == '':
 						IDAT=IDAT[:-4]+calc_crc
 						print('[Finished] Successfully fix crc')
